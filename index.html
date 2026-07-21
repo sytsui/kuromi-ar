@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kuromi AR Game</title>
-    <!-- Google's Native Model Viewer WebAR Library -->
+    <!-- Google's Native Model Viewer Library -->
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
     <style>
       body {
@@ -17,47 +17,60 @@
         justify-content: center;
         align-items: center;
         background-color: #121212;
-        font-family: sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         color: white;
       }
       model-viewer {
-        width: 100%;
-        height: 80%;
+        width: 90vw;
+        height: 75vh;
+        --postfix-bg: #1e1e1e;
       }
       .ar-button {
         background-color: #ff69b4;
         color: white;
         border: none;
-        border-radius: 30px;
-        padding: 15px 30px;
+        border-radius: 25px;
+        padding: 16px 32px;
         font-size: 18px;
         font-weight: bold;
         cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 12px rgba(255, 105, 180, 0.4);
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+      }
+      .instructions {
+        margin-top: 10px;
+        font-size: 14px;
+        opacity: 0.8;
+        text-align: center;
       }
     </style>
   </head>
   <body>
 
-    <h2>Kuromi AR Experience</h2>
+    <h2>Kuromi AR</h2>
 
-    <!-- Model Viewer handles native device camera & AR placement automatically -->
+    <!-- Configured specifically for iOS Safari Quick Look -->
     <model-viewer
       src="kuromi.glb"
+      ios-src="kuromi.usdz"
       alt="Kuromi 3D Model"
       ar
-      ar-modes="webxr scene-viewer quick-look"
+      ar-modes="quick-look scene-viewer webxr"
       camera-controls
-      touch-action="pan-y"
+      auto-rotate
       shadow-intensity="1">
       
       <button slot="ar-button" class="ar-button">
-        🌸 Launch AR Camera
+        📱 View Kuromi in AR
       </button>
       
     </model-viewer>
 
-    <p style="font-size: 14px; opacity: 0.8;">Tap the pink button to place Kuromi in your room!</p>
+    <p class="instructions">Open this page in <b>Safari</b> on your iPhone!</p>
 
   </body>
 </html>

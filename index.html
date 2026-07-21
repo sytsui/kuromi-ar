@@ -54,23 +54,8 @@
     <h2>Kuromi AR</h2>
 
     <!-- Configured specifically for iOS Safari Quick Look -->
-    <!-- <model-viewer
-      src="kuromi.glb"
-      ios-src="kuromi.usdz"
-      alt="Kuromi 3D Model"
-      ar
-      ar-modes="quick-look scene-viewer webxr"
-      camera-controls
-      auto-rotate
-      shadow-intensity="1">
-      
-      <button slot="ar-button" class="ar-button">
-        📱 View Kuromi in AR
-      </button>
-      
-    </model-viewer> -->
 
-    <model-viewer
+    <!-- <model-viewer
       src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
       ios-src="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
       alt="Astronaut Model"
@@ -82,6 +67,22 @@
         📱 View Astronaut in AR
       </button>
       
+    </model-viewer> -->
+
+    <model-viewer
+      src="kuromi.glb"
+      ios-src="Kuromi.usdz"
+      alt="Kuromi 3D Model"
+      ar
+      ar-modes="quick-look scene-viewer webxr"
+      camera-controls
+      auto-rotate
+      shadow-intensity="1">
+    
+      <button slot="ar-button" class="ar-button">
+        📱 View Kuromi in AR
+      </button>
+    
     </model-viewer>
 
     <p class="instructions">Open this page in <b>Safari</b> on your iPhone!</p>

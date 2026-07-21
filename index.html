@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Kuromi AR Thrower</title>
     
-    <!-- Core WebXR & AR Libraries -->
+    <!-- A-Frame Library -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
     <style>
-      /* Force full viewport coverage on mobile devices */
+      /* Force the viewport to fill 100% of the mobile screen */
       html, body {
         position: fixed;
         top: 0;
@@ -22,15 +21,25 @@
         overflow: hidden;
         background-color: #000;
       }
-      
-      /* Target camera video element directly */
-      #arjs-video, video {
+
+      /* Force A-Frame canvas to full screen */
+      .a-canvas {
         width: 100vw !important;
         height: 100vh !important;
-        object-fit: cover !important;
         position: absolute !important;
         top: 0 !important;
         left: 0 !important;
+      }
+
+      /* Transparent Full-Screen Touch Layer */
+      #touch-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 99999;
+        background: transparent;
       }
 
       /* Aiming Crosshair */
@@ -38,49 +47,49 @@
         position: absolute;
         top: 50%;
         left: 50%;
-        width: 20px;
-        height: 20px;
-        margin-top: -10px;
-        margin-left: -10px;
-        border: 2px solid #ff69b4;
+        width: 24px;
+        height: 24px;
+        margin-top: -12px;
+        margin-left: -12px;
+        border: 3px solid #ff69b4;
         border-radius: 50%;
-        z-index: 999999;
+        z-index: 100000;
         pointer-events: none;
       }
     </style>
   </head>
   <body>
 
+    <!-- Fullscreen Touch Trigger Layer -->
+    <div id="touch-overlay"></div>
     <div id="reticle"></div>
 
     <a-scene
       embedded
-      arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;"
       vr-mode-ui="enabled: false"
-      renderer="logarithmicDepthBuffer: true; colorManagement: true;"
+      renderer="colorManagement: true;"
     >
       <a-assets>
-        <!-- Ensure file name matches your model exactly -->
         <a-asset-item id="kuromiModel" src="kuromi.glb"></a-asset-item>
       </a-assets>
 
-      <a-camera id="mainCamera" position="0 0 0" look-controls="enabled: false"></a-camera>
+      <a-camera id="mainCamera" position="0 1.6 0" look-controls="enabled: true"></a-camera>
 
       <a-entity id="world"></a-entity>
     </a-scene>
 
     <script>
-      const scene = document.querySelector('a-scene');
       const cameraEntity = document.getElementById('mainCamera');
       const world = document.getElementById('world');
+      const touchOverlay = document.getElementById('touch-overlay');
 
       function throwKuromi() {
-        // Create new Kuromi object entity
+        // Create new Kuromi entity
         const model = document.createElement('a-entity');
         model.setAttribute('gltf-model', '#kuromiModel');
-        model.setAttribute('scale', '0.2 0.2 0.2');
+        model.setAttribute('scale', '0.3 0.3 0.3');
 
-        // Extract camera matrix position and orientation
+        // Extract camera position and direction vector from Three.js camera
         const cameraThree = cameraEntity.getObject3D('camera');
         const pos = new THREE.Vector3();
         const dir = new THREE.Vector3();
@@ -88,20 +97,20 @@
         cameraThree.getWorldPosition(pos);
         cameraThree.getWorldDirection(dir);
 
-        // Set starting position slightly ahead of the phone lens
-        const startX = pos.x - dir.x * 0.3;
-        const startY = pos.y - dir.y * 0.3;
-        const startZ = pos.z - dir.z * 0.3;
+        // Place model starting position in front of phone
+        const startX = pos.x - dir.x * 0.5;
+        const startY = pos.y - dir.y * 0.5;
+        const startZ = pos.z - dir.z * 0.5;
 
         model.setAttribute('position', `${startX} ${startY} ${startZ}`);
         world.appendChild(model);
 
-        // Project model target 4 units forward along direction vector
-        const targetX = pos.x - dir.x * 4;
-        const targetY = pos.y - dir.y * 4 - 0.5; // slight gravity drop
-        const targetZ = pos.z - dir.z * 4;
+        // Target coordinates 5 meters forward
+        const targetX = pos.x - dir.x * 5;
+        const targetY = pos.y - dir.y * 5 - 0.8; // gravity arc drop
+        const targetZ = pos.z - dir.z * 5;
 
-        // Perform smooth throw animation
+        // Perform throwing animation
         model.setAttribute('animation', {
           property: 'position',
           to: `${targetX} ${targetY} ${targetZ}`,
@@ -110,8 +119,13 @@
         });
       }
 
-      // Capture taps anywhere on the screen
-      window.addEventListener('pointerdown', (e) => {
+      // Explicit touch listener attached directly to touch overlay element
+      touchOverlay.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        throwKuromi();
+      });
+
+      touchOverlay.addEventListener('click', (e) => {
         throwKuromi();
       });
     </script>

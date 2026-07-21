@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Include A-Frame and MindAR WebXR Libraries -->
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-xr-aframe.prod.js"></script>
+    
+    <style>
+      body { margin: 0; overflow: hidden; }
+      #instructions {
+        position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+        background: rgba(0,0,0,0.7); color: white; padding: 10px 20px;
+        border-radius: 20px; font-family: sans-serif; pointer-events: none; text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="instructions">Scan the floor, then tap to place Kuromi!</div>
+
+    <!-- The AR Scene Setup -->
+    <a-scene mindar-xr="type: world" embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+      <a-assets>
+        <!-- Load your 3D Kuromi Model here (Replace with your actual file URL) -->
+        <a-asset-item id="kuromiModel" src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF-Binary/Duck.glb"></a-asset-item>
+      </a-assets>
+
+      <a-camera position="0 0 0" raycaster="objects: .clickable" cursor="fuse: false; rayOrigin: mouse"></a-camera>
+
+      <!-- A invisible ground plane that catches your screen taps -->
+      <a-entity mindar-xr-anchor="type: surface">
+        <a-plane id="ground" class="clickable" visible="false" scale="100 100 1" rotation="-90 0 0"></a-plane>
+      </a-entity>
+    </a-scene>
+
+    <script>
+      const ground = document.querySelector('#ground');
+      const scene = document.querySelector('a-scene');
+
+      // Listen for a tap on the detected real-world surface
+      ground.addEventListener('click', (event) => {
+        // Get the exact 3D coordinates of where the user clicked on the floor
+        const intersectionPoint = event.detail.intersection.point;
+
+        // Create a new entity (object) for Kuromi
+        const newKuromi = document.createElement('a-entity');
+        
+        // Set the 3D model, position, and appropriate scale
+        newKuromi.setAttribute('gltf-model', '#kuromiModel');
+        newKuromi.setAttribute('position', intersectionPoint);
+        newKuromi.setAttribute('scale', '0.2 0.2 0.2'); // Adjust based on model size
+
+        // Add it to the scene. It will persist until the user closes the webpage!
+        scene.appendChild(newKuromi);
+      });
+    </script>
+  </body>
+</html>

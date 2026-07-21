@@ -2,99 +2,117 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Kuromi Thrower Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Kuromi AR Thrower</title>
     
-    <!-- A-Frame and MindAR Libraries -->
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    
+    <!-- Core WebXR & AR Libraries -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
     <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-      }
-      #crosshair {
+      /* Force full viewport coverage on mobile devices */
+      html, body {
         position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #000;
+      }
+      
+      /* Target camera video element directly */
+      #arjs-video, video {
+        width: 100vw !important;
+        height: 100vh !important;
+        object-fit: cover !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+      }
+
+      /* Aiming Crosshair */
+      #reticle {
+        position: absolute;
         top: 50%;
         left: 50%;
-        width: 24px;
-        height: 24px;
-        margin-left: -12px;
-        margin-top: -12px;
-        border: 3px solid #ff69b4;
+        width: 20px;
+        height: 20px;
+        margin-top: -10px;
+        margin-left: -10px;
+        border: 2px solid #ff69b4;
         border-radius: 50%;
+        z-index: 999999;
         pointer-events: none;
-        z-index: 9999;
       }
     </style>
   </head>
   <body>
-    <!-- Aiming Reticle -->
-    <div id="crosshair"></div>
 
-    <a-scene 
-      mindar-image="uiScanning: no;" 
-      color-space="sRGB" 
-      embedded 
-      renderer="colorManagement: true, physicallyCorrectLights" 
-      vr-mode-ui="enabled: false" 
-      device-orientation-permission-ui="enabled: true">
-      
+    <div id="reticle"></div>
+
+    <a-scene
+      embedded
+      arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;"
+      vr-mode-ui="enabled: false"
+      renderer="logarithmicDepthBuffer: true; colorManagement: true;"
+    >
       <a-assets>
-        <!-- Specify your model file name here -->
+        <!-- Ensure file name matches your model exactly -->
         <a-asset-item id="kuromiModel" src="kuromi.glb"></a-asset-item>
       </a-assets>
 
-      <a-camera id="camera" position="0 0 0" look-controls="enabled: true"></a-camera>
+      <a-camera id="mainCamera" position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- Container where thrown models spawn -->
-      <a-entity id="kuromiContainer"></a-entity>
+      <a-entity id="world"></a-entity>
     </a-scene>
 
     <script>
-      const camera = document.getElementById('camera');
-      const container = document.getElementById('kuromiContainer');
+      const scene = document.querySelector('a-scene');
+      const cameraEntity = document.getElementById('mainCamera');
+      const world = document.getElementById('world');
 
       function throwKuromi() {
-        const newKuromi = document.createElement('a-entity');
-        newKuromi.setAttribute('gltf-model', '#kuromiModel');
-        newKuromi.setAttribute('scale', '0.15 0.15 0.15');
+        // Create new Kuromi object entity
+        const model = document.createElement('a-entity');
+        model.setAttribute('gltf-model', '#kuromiModel');
+        model.setAttribute('scale', '0.2 0.2 0.2');
 
-        // Grab current camera position and direction vector
-        const cameraThree = camera.getObject3D('camera');
-        const position = new THREE.Vector3();
-        const direction = new THREE.Vector3();
+        // Extract camera matrix position and orientation
+        const cameraThree = cameraEntity.getObject3D('camera');
+        const pos = new THREE.Vector3();
+        const dir = new THREE.Vector3();
 
-        cameraThree.getWorldPosition(position);
-        cameraThree.getWorldDirection(direction);
+        cameraThree.getWorldPosition(pos);
+        cameraThree.getWorldDirection(dir);
 
-        // Place new Kuromi slightly in front of camera lens
-        const startX = position.x - direction.x * 0.4;
-        const startY = position.y - direction.y * 0.4;
-        const startZ = position.z - direction.z * 0.4;
+        // Set starting position slightly ahead of the phone lens
+        const startX = pos.x - dir.x * 0.3;
+        const startY = pos.y - dir.y * 0.3;
+        const startZ = pos.z - dir.z * 0.3;
 
-        newKuromi.setAttribute('position', `${startX} ${startY} ${startZ}`);
-        container.appendChild(newKuromi);
+        model.setAttribute('position', `${startX} ${startY} ${startZ}`);
+        world.appendChild(model);
 
-        // Calculate throwing trajectory
-        const targetX = position.x - direction.x * 3;
-        const targetY = position.y - direction.y * 3 - 0.4; // Arc downward
-        const targetZ = position.z - direction.z * 3;
+        // Project model target 4 units forward along direction vector
+        const targetX = pos.x - dir.x * 4;
+        const targetY = pos.y - dir.y * 4 - 0.5; // slight gravity drop
+        const targetZ = pos.z - dir.z * 4;
 
-        newKuromi.setAttribute('animation', {
+        // Perform smooth throw animation
+        model.setAttribute('animation', {
           property: 'position',
           to: `${targetX} ${targetY} ${targetZ}`,
-          dur: 500,
-          easing: 'easeOutQuad'
+          dur: 600,
+          easing: 'easeOutCubic'
         });
       }
 
-      // Listen for touch taps on screen
-      window.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 1) {
-          throwKuromi();
-        }
+      // Capture taps anywhere on the screen
+      window.addEventListener('pointerdown', (e) => {
+        throwKuromi();
       });
     </script>
   </body>

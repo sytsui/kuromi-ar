@@ -1,91 +1,103 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kuromi AR Game</title>
-    <!-- Google's Native Model Viewer Library -->
-    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Kuromi Thrower Game</title>
+    <!-- A-Frame Framework for WebXR -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <style>
       body {
         margin: 0;
-        padding: 0;
-        width: 100vw;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        background-color: #121212;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        color: white;
+        overflow: hidden;
       }
-      model-viewer {
-        width: 90vw;
-        height: 75vh;
-        --postfix-bg: #1e1e1e;
-      }
-      .ar-button {
-        background-color: #ff69b4;
-        color: white;
-        border: none;
-        border-radius: 25px;
-        padding: 16px 32px;
-        font-size: 18px;
-        font-weight: bold;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(255, 105, 180, 0.4);
+      #crosshair {
         position: absolute;
-        bottom: 20px;
+        top: 50%;
         left: 50%;
-        transform: translateX(-50%);
-        white-space: nowrap;
-      }
-      .instructions {
-        margin-top: 10px;
-        font-size: 14px;
-        opacity: 0.8;
-        text-align: center;
+        width: 20px;
+        height: 20px;
+        margin-left: -10px;
+        margin-top: -10px;
+        border: 2px solid #ff69b4;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 999;
       }
     </style>
   </head>
   <body>
+    <!-- Crosshair indicator on screen -->
+    <div id="crosshair"></div>
 
-    <h2>Kuromi AR</h2>
+    <a-scene
+      webxr="optionalFeatures: hit-test, local-floor;"
+      arjs="sourceType: webcam; debugUIEnabled: false;"
+      renderer="colorManagement: true;"
+    >
+      <!-- Load Kuromi Model -->
+      <a-assets>
+        <a-asset-item id="kuromiModel" src="kuromi.glb"></a-asset-item>
+      </a-assets>
 
-    <!-- Configured specifically for iOS Safari Quick Look -->
+      <!-- Camera Rig -->
+      <a-entity id="cameraRig">
+        <a-camera id="camera" position="0 1.6 0" look-controls></a-camera>
+      </a-entity>
 
-    <!-- <model-viewer
-      src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
-      ios-src="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
-      alt="Astronaut Model"
-      ar
-      ar-modes="quick-look scene-viewer webxr"
-      camera-controls>
-      
-      <button slot="ar-button" class="ar-button">
-        📱 View Astronaut in AR
-      </button>
-      
-    </model-viewer> -->
+      <!-- Container where thrown Kuromis will be spawned -->
+      <a-entity id="kuromiContainer"></a-entity>
+    </a-scene>
 
-    <model-viewer
-      src="kuromi.glb"
-      ios-src="Kuromi.usdz"
-      alt="Kuromi 3D Model"
-      ar
-      ar-modes="quick-look scene-viewer webxr"
-      camera-controls
-      auto-rotate
-      shadow-intensity="1">
-    
-      <button slot="ar-button" class="ar-button">
-        📱 View Kuromi in AR
-      </button>
-    
-    </model-viewer>
+    <script>
+      const scene = document.querySelector('a-scene');
+      const camera = document.getElementById('camera');
+      const container = document.getElementById('kuromiContainer');
 
-    <p class="instructions">Open this page in <b>Safari</b> on your iPhone!</p>
+      // Function to throw a Kuromi on screen tap
+      function throwKuromi() {
+        // Create new Kuromi entity
+        const newKuromi = document.createElement('a-entity');
+        newKuromi.setAttribute('gltf-model', '#kuromiModel');
+        newKuromi.setAttribute('scale', '0.2 0.2 0.2');
 
+        // Get current camera position and direction vector
+        const cameraThree = camera.getObject3D('camera');
+        const position = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+
+        cameraThree.getWorldPosition(position);
+        cameraThree.getWorldDirection(direction);
+
+        // Position model slightly in front of the camera
+        newKuromi.setAttribute('position', {
+          x: position.x - direction.x * 0.5,
+          y: position.y - direction.y * 0.5,
+          z: position.z - direction.z * 0.5
+        });
+
+        container.appendChild(newKuromi);
+
+        // Animate the throw forward
+        const targetX = position.x - direction.x * 4;
+        const targetY = position.y - direction.y * 4 - 0.5; // Slight arc down for gravity effect
+        const targetZ = position.z - direction.z * 4;
+
+        newKuromi.setAttribute('animation', {
+          property: 'position',
+          to: `${targetX} ${targetY} ${targetZ}`,
+          dur: 600,
+          easing: 'easeOutQuad'
+        });
+      }
+
+      // Listen for screen tap anywhere
+      window.addEventListener('touchstart', (e) => {
+        // Prevent default touch behaviors
+        if (e.touches.length === 1) {
+          throwKuromi();
+        }
+      });
+    </script>
   </body>
 </html>
